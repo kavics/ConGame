@@ -38,7 +38,6 @@ namespace ConGame
             }
         }
 
-
         private static KeyboardInput HandleInput()
         {
             if (Console.KeyAvailable)
@@ -71,9 +70,11 @@ namespace ConGame
                     break;
                 case KeyboardInput.RotateLeft:
                     world.CurrentShapeState = (world.CurrentShapeState + 3) % 4;
+                    MoveAfterRotate(world);
                     break;
                 case KeyboardInput.RotateRight:
                     world.CurrentShapeState = (world.CurrentShapeState + 1) % 4;
+                    MoveAfterRotate(world);
                     break;
                 case KeyboardInput.Drop:
                     break;
@@ -82,6 +83,17 @@ namespace ConGame
             //for (int y = 0; y < buffer.Length; y++)
             //    for (int x = 0; x < buffer[y].Length; x++)
             //        buffer[y][x] = (y + x) % 2 == step % 2;
+        }
+
+        private static void MoveAfterRotate(World world)
+        {
+            var a = world.Width - world.CurrentShapeX -
+                    world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState].OffsetRight - 1;
+            var b = - world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState].OffsetLeft - world.CurrentShapeX;
+            var moveLeft = Math.Min(0, a);
+            var moveRight = Math.Max(0, b);
+
+            world.CurrentShapeX += moveLeft + moveRight;
         }
 
         private static bool CanMove(World world, bool toRight)
