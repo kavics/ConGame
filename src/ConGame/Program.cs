@@ -18,9 +18,9 @@ namespace ConGame
                 Height = height,
                 ShapeSize = Drawings.Size,
                 CurrentShapeIndex = 1,
-                CurrentShapeX = width / 2,
+                CurrentShapeState = 1,
+                CurrentShapeX = 17,
                 CurrentShapeY = 0,
-                CurrentShapeState = 0,
                 Shapes = Drawings.CreateShapes(),
                 Buffer = InitializeBuffer(width, height)
             };
@@ -37,6 +37,7 @@ namespace ConGame
                 Task.Delay(20).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         }
+
 
         private static KeyboardInput HandleInput()
         {
@@ -61,11 +62,11 @@ namespace ConGame
             switch (input)
             {
                 case KeyboardInput.Left:
-                    if(CanMove(world , - 1))
+                    if(CanMove(world , false))
                         world.CurrentShapeX--;
                     break;
                 case KeyboardInput.Right:
-                    if (CanMove(world, 1))
+                    if (CanMove(world, true))
                         world.CurrentShapeX++;
                     break;
                 case KeyboardInput.RotateLeft:
@@ -83,54 +84,13 @@ namespace ConGame
             //        buffer[y][x] = (y + x) % 2 == step % 2;
         }
 
-        private static bool CanMove(World world, int offset)
+        private static bool CanMove(World world, bool toRight)
         {
             var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
 
-            if (offset < 0)
-            {
-                // should move left
-                var shapeOffset = 0;
-                var found = false;
-                for (int x = 0; x < world.ShapeSize; x++)
-                {
-                    for (int y = 0; y < world.ShapeSize; y++)
-                    {
-                        if (shape[y][x])
-                        {
-                            shapeOffset = x;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found)
-                        break;
-                }
-
-                return world.CurrentShapeX + shapeOffset > 0;
-            }
-            else
-            {
-                // should move right
-                var shapeOffset = 0;
-                var found = false;
-                for (int x = world.ShapeSize - 1; x >= 0; x--)
-                {
-                    for (int y = 0; y < world.ShapeSize; y++)
-                    {
-                        if (shape[y][x])
-                        {
-                            shapeOffset = x;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found)
-                        break;
-                }
-
-                return world.CurrentShapeX + shapeOffset < world.Width - 1;
-            }
+            if (toRight)
+                return world.CurrentShapeX + shape.OffsetRight < world.Width - 1;
+            return world.CurrentShapeX + shape.OffsetLeft > 0;
         }
 
         private static void Draw(World world, int width, int height)
@@ -153,7 +113,7 @@ namespace ConGame
                 {
                     for (int x = 0; x < world.ShapeSize; x++)
                     {
-                        if (shape[y - world.CurrentShapeY][x])
+                        if (shape.Cells[y - world.CurrentShapeY][x])
                         {
                             line[2 * (x + world.CurrentShapeX)] = '@';
                             line[2 * (x + world.CurrentShapeX) + 1] = '@';

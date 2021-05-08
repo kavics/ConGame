@@ -9,7 +9,7 @@
         public int CurrentShapeY { get; set; }
         public int CurrentShapeIndex { get; set; }
         public int CurrentShapeState { get; set; }
-        public bool[][][][] Shapes { get; set; }
+        public Shape[][] Shapes { get; set; }
         public bool[][] Buffer { get; set; }
     }
 }
