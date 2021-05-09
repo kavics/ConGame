@@ -9,26 +9,24 @@ namespace ConGame
 {
     public static class Drawings
     {
-        public const int Size = 5;
-
         // ShapeIndex, ShapeState
         public static Shape[][] CreateShapes()
         {
-            var shapes = new Shape[Lines.Length / (Size + 1)][];
+            var shapes = new Shape[Lines.Length / (Shape.Size + 1)][];
             for (int shapeIndex = 0; shapeIndex < shapes.Length; shapeIndex++)
             {
                 shapes[shapeIndex] = new Shape[4];
-                var startLineIndex = shapeIndex * (Size + 1);
+                var startLineIndex = shapeIndex * (Shape.Size + 1);
                 for (int i = 0; i < 4; i++)
                 {
-                    var shape = new Shape {Cells = new bool[Size][]};
+                    var shape = new Shape {Cells = new bool[Shape.Size][]};
                     shapes[shapeIndex][i] = shape;
-                    for (int y = 0; y < Size; y++)
+                    for (int y = 0; y < Shape.Size; y++)
                     {
-                        shape.Cells[y] = new bool[Size];
-                        for (int x = 0; x < Size; x++)
+                        shape.Cells[y] = new bool[Shape.Size];
+                        for (int x = 0; x < Shape.Size; x++)
                         {
-                            var c = Lines[startLineIndex + y][((Size + 1) * i + x) * 2];
+                            var c = Lines[startLineIndex + y][((Shape.Size + 1) * i + x) * 2];
                             shape.Cells[y][x] = c != '.';
                         }
                     }
@@ -42,10 +40,10 @@ namespace ConGame
         private static void SetOffsets(Shape shape)
         {
             // shape.OffsetLeft is the first non-empty column on the left side
-            for (int x = 0; x < Size; x++)
+            for (int x = 0; x < Shape.Size; x++)
             {
                 var found = false;
-                for (int y = 0; y < Size; y++)
+                for (int y = 0; y < Shape.Size; y++)
                 {
                     if (shape.Cells[y][x])
                     {
@@ -59,10 +57,10 @@ namespace ConGame
             }
 
             // shape.OffsetRight is the first non-empty column on the right side
-            for (int x = Size - 1; x >= 0; x--)
+            for (int x = Shape.Size - 1; x >= 0; x--)
             {
                 var found = false;
-                for (int y = 0; y < Size; y++)
+                for (int y = 0; y < Shape.Size; y++)
                 {
                     if (shape.Cells[y][x])
                     {

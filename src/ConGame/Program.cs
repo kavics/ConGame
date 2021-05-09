@@ -7,6 +7,9 @@ namespace ConGame
 {
     class Program
     {
+        // falling speed: lower is faster
+        private static readonly int DroppingCounterDefault = 2;
+
         static void Main(string[] args)
         {
             var width = 20;
@@ -16,7 +19,6 @@ namespace ConGame
             {
                 Width = width,
                 Height = height,
-                ShapeSize = Drawings.Size,
                 CurrentShapeIndex = 1,
                 CurrentShapeState = 1,
                 CurrentShapeX = 17,
@@ -48,16 +50,18 @@ namespace ConGame
                     case ConsoleKey.LeftArrow: return KeyboardInput.Left;
                     case ConsoleKey.RightArrow: return KeyboardInput.Right;
                     case ConsoleKey.UpArrow: return KeyboardInput.RotateLeft;
-                    case ConsoleKey.DownArrow: return KeyboardInput.RotateRight;
-                    case ConsoleKey.Spacebar: return KeyboardInput.Drop;
+                    case ConsoleKey.DownArrow: return KeyboardInput.Drop; //return KeyboardInput.RotateRight;
+                    //case ConsoleKey.Spacebar: return KeyboardInput.Drop;
                     case ConsoleKey.Escape: return KeyboardInput.Exit;
                 }
             }
             return KeyboardInput.Nothing;
         }
 
-        private static void CalculateNext(KeyboardInput input, World world, int width, int height, int step)
+        private static bool CalculateNext(KeyboardInput input, World world, int width, int height, int step)
         {
+            var lastX = world.CurrentShapeX;
+            var lastY = world.CurrentShapeY;
             switch (input)
             {
                 case KeyboardInput.Left:
@@ -77,12 +81,46 @@ namespace ConGame
                     MoveAfterRotate(world);
                     break;
                 case KeyboardInput.Drop:
+                    if (world.IsDropping)
+                    {
+                        world.IsDropping = false;
+                        world.DroppingCounter = 0;
+                    }
+                    else
+                    {
+                        world.IsDropping = true;
+                        world.DroppingCounter = 0;
+                        world.CurrentShapeY++;
+                    }
+                    break;
+                case KeyboardInput.Nothing:
+                    if (world.IsDropping)
+                    {
+                        if (--world.DroppingCounter <= 0)
+                        {
+                            world.CurrentShapeY++;
+                            world.DroppingCounter = DroppingCounterDefault;
+                        }
+                    }
                     break;
             }
-            //var buffer = world.Buffer;
-            //for (int y = 0; y < buffer.Length; y++)
-            //    for (int x = 0; x < buffer[y].Length; x++)
-            //        buffer[y][x] = (y + x) % 2 == step % 2;
+
+            if (!CollisionTest(world))
+                return true;
+
+            CopyCurrentShapeToBuffer(world, lastX, lastY);
+
+            return GetNextShape();
+        }
+
+        private static void CopyCurrentShapeToBuffer(World world, int shapeX, int shapeY)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static bool GetNextShape()
+        {
+            throw new NotImplementedException();
         }
 
         private static void MoveAfterRotate(World world)
@@ -105,6 +143,30 @@ namespace ConGame
             return world.CurrentShapeX + shape.OffsetLeft > 0;
         }
 
+        private static bool CollisionTest(World world)
+        {
+            var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
+            for (int y = 0; y < Shape.Size; y++)
+            {
+                var screenY = world.CurrentShapeY + y;
+                for (int x = 0; x < Shape.Size; x++)
+                {
+                    var screenX = world.CurrentShapeX + x;
+                    if (shape.Cells[y][x])
+                    {
+                        // Test the collision with bottom of the world
+                        if (screenY >= world.Height)
+                            return true;
+                        // Test the collision with any active cell of the world
+                        if (world.Buffer[screenY][screenX])
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private static void Draw(World world, int width, int height)
         {
             var buffer = world.Buffer;
@@ -121,9 +183,9 @@ namespace ConGame
                     line[2 * x + 1] = c;
                 }
 
-                if (y >= world.CurrentShapeY && y < world.CurrentShapeY + world.ShapeSize)
+                if (y >= world.CurrentShapeY && y < world.CurrentShapeY + Shape.Size)
                 {
-                    for (int x = 0; x < world.ShapeSize; x++)
+                    for (int x = 0; x < Shape.Size; x++)
                     {
                         if (shape.Cells[y - world.CurrentShapeY][x])
                         {
