@@ -8,35 +8,58 @@ namespace ConGame
     class Program
     {
         // falling speed: lower is faster
-        private static readonly int DroppingCounterDefault = 2;
+        private static readonly int DroppingCounterDefault = 1;
 
         static void Main(string[] args)
         {
             var width = 20;
             var height = Console.WindowHeight;
 
-            var world = new World
-            {
-                Width = width,
-                Height = height,
-                CurrentShapeIndex = 1,
-                CurrentShapeState = 1,
-                CurrentShapeX = 17,
-                CurrentShapeY = 0,
-                Shapes = Drawings.CreateShapes(),
-                Buffer = InitializeBuffer(width, height)
-            };
-
+            var world = InitializeWorld(width, height);
             InitializeScreen(width, height);
-            var step = -1;
+
             while (true)
             {
                 var input = HandleInput();
                 if (input == KeyboardInput.Exit)
                     break;
-                CalculateNext(input, world, width, height, ++step);
+                CalculateNext(input, world);
                 Draw(world, width, height);
                 Task.Delay(20).ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+        }
+
+        private static World InitializeWorld(int width, int height)
+        {
+            return new World
+            {
+                Width = width,
+                Height = height,
+                CurrentShapeIndex = 0,
+                CurrentShapeState = 0,
+                CurrentShapeX = 0,
+                CurrentShapeY = 0,
+                Shapes = Drawings.CreateShapes(),
+                Buffer = InitializeBuffer(width, height)
+            };
+        }
+        private static bool[][] InitializeBuffer(int width, int height)
+        {
+            var buffer = new bool[height][];
+            for (int i = 0; i < height; i++)
+                buffer[i] = new bool[width];
+            return buffer;
+        }
+        private static void InitializeScreen(int width, int height)
+        {
+            var buffer = new bool[height][];
+            for (int y = 0; y < height; y++)
+            {
+                Console.CursorTop = y;
+                Console.CursorLeft = 9;
+                Console.Write('|');
+                Console.CursorLeft = 10 + width * 2;
+                Console.Write('|');
             }
         }
 
@@ -58,7 +81,7 @@ namespace ConGame
             return KeyboardInput.Nothing;
         }
 
-        private static bool CalculateNext(KeyboardInput input, World world, int width, int height, int step)
+        private static bool CalculateNext(KeyboardInput input, World world)
         {
             var lastX = world.CurrentShapeX;
             var lastY = world.CurrentShapeY;
@@ -108,26 +131,18 @@ namespace ConGame
             if (!CollisionTest(world))
                 return true;
 
+            world.IsDropping = false;
             CopyCurrentShapeToBuffer(world, lastX, lastY);
-
-            return GetNextShape();
+            return GetNextShape(world);
         }
-
-        private static void CopyCurrentShapeToBuffer(World world, int shapeX, int shapeY)
+        private static bool CanMove(World world, bool toRight)
         {
             var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
-            var buffer = world.Buffer;
-            for (int y = 0; y < Shape.Size; y++)
-                for (int x = 0; x < Shape.Size; x++)
-                    if (shape.Cells[y][x])
-                        buffer[shapeY + y][shapeX + x] = true;
-        }
 
-        private static bool GetNextShape()
-        {
-            throw new NotImplementedException();
+            if (toRight)
+                return world.CurrentShapeX + shape.OffsetRight < world.Width - 1;
+            return world.CurrentShapeX + shape.OffsetLeft > 0;
         }
-
         private static void MoveAfterRotate(World world)
         {
             var a = world.Width - world.CurrentShapeX -
@@ -138,16 +153,6 @@ namespace ConGame
 
             world.CurrentShapeX += moveLeft + moveRight;
         }
-
-        private static bool CanMove(World world, bool toRight)
-        {
-            var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
-
-            if (toRight)
-                return world.CurrentShapeX + shape.OffsetRight < world.Width - 1;
-            return world.CurrentShapeX + shape.OffsetLeft > 0;
-        }
-
         private static bool CollisionTest(World world)
         {
             var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
@@ -170,6 +175,24 @@ namespace ConGame
             }
 
             return false;
+        }
+        private static void CopyCurrentShapeToBuffer(World world, int shapeX, int shapeY)
+        {
+            var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
+            var buffer = world.Buffer;
+            for (int y = 0; y < Shape.Size; y++)
+                for (int x = 0; x < Shape.Size; x++)
+                    if (shape.Cells[y][x])
+                        buffer[shapeY + y][shapeX + x] = true;
+        }
+        private static bool GetNextShape(World world)
+        {
+            world.CurrentShapeIndex = world.CurrentShapeIndex + 1;
+            world.CurrentShapeState = 0;
+            world.CurrentShapeX = (world.Width - Shape.Size) / 2;
+            world.CurrentShapeY = 0;
+
+            return true;
         }
 
         private static void Draw(World world, int width, int height)
@@ -208,26 +231,6 @@ namespace ConGame
                 Console.CursorTop = y;
                 Console.CursorLeft = 10;
                 Console.Write(lines[y]);
-            }
-        }
-
-        private static bool[][] InitializeBuffer(int width, int height)
-        {
-            var buffer = new bool[height][];
-            for (int i = 0; i < height; i++)
-                buffer[i] = new bool[width];
-            return buffer;
-        }
-        private static void InitializeScreen(int width, int height)
-        {
-            var buffer = new bool[height][];
-            for (int y = 0; y < height; y++)
-            {
-                Console.CursorTop = y;
-                Console.CursorLeft = 9;
-                Console.Write('|');
-                Console.CursorLeft = 10 + width * 2;
-                Console.Write('|');
             }
         }
     }
