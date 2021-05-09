@@ -115,7 +115,12 @@ namespace ConGame
 
         private static void CopyCurrentShapeToBuffer(World world, int shapeX, int shapeY)
         {
-            throw new NotImplementedException();
+            var shape = world.Shapes[world.CurrentShapeIndex][world.CurrentShapeState];
+            var buffer = world.Buffer;
+            for (int y = 0; y < Shape.Size; y++)
+                for (int x = 0; x < Shape.Size; x++)
+                    if (shape.Cells[y][x])
+                        buffer[shapeY + y][shapeX + x] = true;
         }
 
         private static bool GetNextShape()
